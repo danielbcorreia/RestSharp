@@ -71,8 +71,15 @@ namespace RestSharp.Deserializers
 			foreach (var prop in props)
 			{
 				var type = prop.PropertyType;
-
 				var name = prop.Name;
+
+                // support property names different from the json representation
+                JsonPropertyAttribute jsonProp = prop.GetAttribute<JsonPropertyAttribute>();
+
+                if (jsonProp != null) {
+                    name = jsonProp.Name;
+                }
+
 				var actualName = name.GetNameVariants(Culture).FirstOrDefault(n => data.ContainsKey(n));
 				var value = actualName != null ? data[actualName] : null;
 

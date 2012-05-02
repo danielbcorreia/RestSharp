@@ -13,42 +13,52 @@ namespace RestSharp.IntegrationTests
 		[Fact]
 		public void Can_Perform_GET_Async()
 		{
-			const string baseUrl = "http://localhost:8080/";
+			const string baseUrl = "http://localhost:8084/";
 			const string val = "Basic async test";
+
 			var resetEvent = new ManualResetEvent(false);
+
 			using (SimpleServer.Create(baseUrl, Handlers.EchoValue(val)))
 			{
 				var client = new RestClient(baseUrl);
 				var request = new RestRequest("");
+				IRestResponse response = null;
 
-				client.ExecuteAsync(request, (response, asyncHandle) =>
+				client.ExecuteAsync(request, (resp, asyncHandle) => 
 				{
-					Assert.NotNull(response.Content);
-					Assert.Equal(val, response.Content);
+					response = resp;
 					resetEvent.Set();
 				});
+
 				resetEvent.WaitOne();
+
+				Assert.NotNull(response.Content);
+				Assert.Equal(val, response.Content);
 			}
 		}
 
 		[Fact]
 		public void Can_Perform_GET_Async_Without_Async_Handle()
 		{
-			const string baseUrl = "http://localhost:8080/";
+			const string baseUrl = "http://localhost:8084/";
 			const string val = "Basic async test";
 			var resetEvent = new ManualResetEvent(false);
 			using (SimpleServer.Create(baseUrl, Handlers.EchoValue(val)))
 			{
 				var client = new RestClient(baseUrl);
 				var request = new RestRequest("");
+                IRestResponse response = null;
 
-				client.ExecuteAsync(request, response =>
-				{
-					Assert.NotNull(response.Content);
-					Assert.Equal(val, response.Content);
+				client.ExecuteAsync(request, resp => 
+                {
+				    response = resp;
 					resetEvent.Set();
 				});
-				resetEvent.WaitOne();
+				
+                resetEvent.WaitOne();
+
+                Assert.NotNull(response.Content);
+                Assert.Equal(val, response.Content);
 			}
 		}
 

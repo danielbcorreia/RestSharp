@@ -85,19 +85,13 @@ namespace RestSharp.Extensions
 		/// Find a value from a System.Enum by trying several possible variants
 		/// of the string value of the enum.
 		/// </summary>
-		/// <param name="type">Type of enum</typeparam>
+		/// <param name="type">Type of enum</param>
 		/// <param name="value">Value for which to search</param>
 		/// <param name="culture">The culture used to calculate the name variants</param>
-		/// <returns></returns>
+        /// <returns>The Enum value as an object</returns>
 		public static object FindEnumValue(this Type type, string value, CultureInfo culture)
 		{
-#if FRAMEWORK
-			return Enum.GetValues(type)
-				.Cast<Enum>()
-				.First(v => v.ToString().GetNameVariants(culture).Contains(value, StringComparer.Create(culture, true)));
-#else
 			return Enum.Parse(type, value, true);
-#endif
 		}
 	}
 }

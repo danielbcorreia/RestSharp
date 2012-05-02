@@ -35,14 +35,15 @@ namespace RestSharp.Authenticators
 		public static OAuth1Authenticator ForRequestToken(string consumerKey, string consumerSecret)
 		{
 			var authenticator = new OAuth1Authenticator
-									{
-										ParameterHandling = OAuthParameterHandling.HttpAuthorizationHeader,
-										SignatureMethod = OAuthSignatureMethod.HmacSha1,
-										SignatureTreatment = OAuthSignatureTreatment.Escaped,
-										ConsumerKey = consumerKey,
-										ConsumerSecret = consumerSecret,
-											Type = OAuthType.RequestToken
-									};
+			{
+				ParameterHandling = OAuthParameterHandling.HttpAuthorizationHeader,
+				SignatureMethod = OAuthSignatureMethod.HmacSha1,
+				SignatureTreatment = OAuthSignatureTreatment.Escaped,
+				ConsumerKey = consumerKey,
+				ConsumerSecret = consumerSecret,
+				Type = OAuthType.RequestToken
+			};
+
 			return authenticator;
 		}
 
