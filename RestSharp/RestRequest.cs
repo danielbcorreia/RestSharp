@@ -224,6 +224,7 @@ namespace RestSharp
 
 		/// <summary>
 		/// Serializes obj to data format specified by RequestFormat and adds it to the request body.
+		/// Warning: Set the request format before calling this method.
 		/// </summary>
 		/// <param name="obj">The object to serialize</param>
 		/// <returns>This request</returns>
