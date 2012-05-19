@@ -2,6 +2,7 @@
 {
     using System.Linq;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
 
     public static class RestSharpExtensions 
@@ -33,31 +34,79 @@
 
         public static Task<IRestResponse<T>> ExecuteTaskAsync<T>(this RestClient client, RestRequest request) where T : new()
         {
-            var tcs = new TaskCompletionSource<IRestResponse<T>>(TaskCreationOptions.AttachedToParent);
+            return ExecuteTaskAsync<T>(client, request, CancellationToken.None);
+        }
 
-            client.ExecuteAsync<T>(request, tcs.SetResult);
+        public static Task<IRestResponse> ExecuteTaskAsync(this RestClient client, RestRequest request)
+        {
+            return ExecuteTaskAsync(client, request, CancellationToken.None);
+        }
+
+        public static Task<IRestResponse<T>> ExecuteTaskAsync<T>(this IRestClient client, IRestRequest request, CancellationToken token) where T : new() 
+        {
+            var tcs = new TaskCompletionSource<IRestResponse<T>>(TaskCreationOptions.AttachedToParent);
+            RestRequestAsyncHandle asyncHandle = null;
+
+            // register the cancel delegate to cancel the request and set the task canceled
+            token.Register(() => {
+                if (asyncHandle != null) {
+                    asyncHandle.Abort();
+                }
+
+                tcs.TrySetCanceled();
+            });
+
+            if (!token.IsCancellationRequested) {
+                asyncHandle = client.ExecuteAsync<T>(request, (response) => tcs.TrySetResult(response));
+            } else {
+                tcs.TrySetCanceled();
+            }
 
             return tcs.Task;
         }
 
-        public static Task<IRestResponse> ExecuteTaskAsync(this RestClient client, RestRequest request) {
+        public static Task<IRestResponse> ExecuteTaskAsync(this IRestClient client, IRestRequest request, CancellationToken token) 
+        {
             var tcs = new TaskCompletionSource<IRestResponse>(TaskCreationOptions.AttachedToParent);
+            RestRequestAsyncHandle asyncHandle = null;
 
-            client.ExecuteAsync(request, tcs.SetResult);
+            // register the cancel delegate to cancel the request and set the task canceled
+            token.Register(() => {
+                if (asyncHandle != null) {
+                    asyncHandle.Abort();
+                }
+
+                tcs.TrySetCanceled();
+            });
+
+            if (!token.IsCancellationRequested) {
+                asyncHandle = client.ExecuteAsync(request, (response) => tcs.TrySetResult(response));
+            } else {
+                tcs.TrySetCanceled();
+            }
 
             return tcs.Task;
         }
 
         // high-level methods
 
-        public static Task<T> ExecuteDataAsync<T>(this RestClient client, RestRequest request) where T : new() 
+        public static Task<T> ExecuteDataAsync<T>(this RestClient client, RestRequest request) where T : new()
+        {
+            return ExecuteDataAsync<T>(client, request, CancellationToken.None);
+        }
+
+        public static Task<T> ExecuteDataAsync<T>(this RestClient client, RestRequest request, CancellationToken token) where T : new() 
         {
             var tcs = new TaskCompletionSource<T>(TaskCreationOptions.AttachedToParent);
 
-            client.ExecuteAsync<T>(request, (response) => tcs.SetResult(response.Data));
+            // calling one of the methods above to avoid code repetition, even though we now have two TCS involved
+            client.ExecuteTaskAsync<T>(request, token)
+                  .ContinueWith((t) => tcs.TrySetResult(t.Result.Data));
 
             return tcs.Task;
         }
+
+        // synchrounous high-level methods
 
         public static T ExecuteData<T>(this RestClient client, RestRequest request) where T : new() 
         {
