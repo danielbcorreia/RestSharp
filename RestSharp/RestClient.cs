@@ -112,6 +112,11 @@ namespace RestSharp
 			AddDefaultParameter(new Parameter { Name = name, Value = value, Type = ParameterType.GetOrPost });
 		}
 
+		public void AddDefaultQueryStringParameter(string name, object value) 
+		{
+			AddDefaultParameter(new Parameter { Name = name, Value = value, Type = ParameterType.QueryString });
+		}
+
 		/// <summary>
 		/// Adds a parameter to the request. There are four types of parameters:
 		///	- GetOrPost: Either a QueryString value or encoded form value based on method
@@ -316,10 +321,11 @@ namespace RestSharp
 				}
 			}
 
-			if (request.Method != Method.POST && request.Method != Method.PUT && request.Method != Method.PATCH)
+			if (request.Method != Method.POST && request.Method != Method.PUT && request.Method != Method.PATCH
+                || (request.Parameters.Any(p => p.Type == ParameterType.QueryString)))
 			{
 				// build and attach querystring if this is a get-style request
-				if (request.Parameters.Any(p => p.Type == ParameterType.GetOrPost))
+				if (request.Parameters.Any(p => p.Type == ParameterType.GetOrPost || p.Type == ParameterType.QueryString))
 				{
 					if (assembled.EndsWith("/"))
 					{
@@ -500,7 +506,7 @@ namespace RestSharp
 			IRestResponse<T> response = new RestResponse<T>();
 			try
 			{
-			    response = raw.toAsyncResponse<T>();
+				response = raw.toAsyncResponse<T>();
 				response.Data = handler.Deserialize<T>(raw);
 			}
 			catch (Exception ex)
