@@ -343,7 +343,8 @@ namespace RestSharp
 		private string EncodeParameters(IRestRequest request)
 		{
 			var querystring = new StringBuilder();
-			foreach (var p in request.Parameters.Where(p => p.Type == ParameterType.GetOrPost))
+			foreach (var p in request.Parameters.Where(p => 
+                p.Type == ParameterType.GetOrPost || p.Type == ParameterType.QueryString))
 			{
 				if (querystring.Length > 1)
 					querystring.Append("&");
