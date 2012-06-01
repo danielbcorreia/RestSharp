@@ -14,13 +14,15 @@
 //   limitations under the License. 
 #endregion
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Text;
+using System.Net;
+
 namespace RestSharp
 {
-	using System;
-	using System.Net;
-	using System.Linq;
-	using System.Threading;
-
 	public partial class RestClient
 	{
 		/// <summary>
@@ -42,37 +44,37 @@ namespace RestSharp
 			HttpWebRequest webRequest = null;
 			var asyncHandle = new RestRequestAsyncHandle();
 
-			Action<HttpResponse> responseCb = r => ProcessResponse(r, asyncHandle, callback);
+			Action<HttpResponse> response_cb = r => ProcessResponse(r, asyncHandle, callback);
 
 			if (UseSynchronizationContext && SynchronizationContext.Current != null) {
 				var ctx = SynchronizationContext.Current;
-				var cb = responseCb;
+				var cb = response_cb;
 
-				responseCb = resp => ctx.Post(s => cb(resp), null);
+				response_cb = resp => ctx.Post(s => cb(resp), null);
 			}
 			
 			switch(request.Method)
 			{
 				case Method.GET:
-					webRequest = http.GetAsync(responseCb);
+					webRequest = http.GetAsync(response_cb);
 					break;
 				case Method.POST:
-					webRequest = http.PostAsync(responseCb);
+					webRequest = http.PostAsync(response_cb);
 					break;
 				case Method.PUT:
-					webRequest = http.PutAsync(responseCb);
+					webRequest = http.PutAsync(response_cb);
 					break;
 				case Method.DELETE:
-					webRequest = http.DeleteAsync(responseCb);
+					webRequest = http.DeleteAsync(response_cb);
 					break;
 				case Method.HEAD:
-					webRequest = http.HeadAsync(responseCb);
+					webRequest = http.HeadAsync(response_cb);
 					break;
 				case Method.OPTIONS:
-					webRequest = http.OptionsAsync(responseCb);
+					webRequest = http.OptionsAsync(response_cb);
 					break;
 				case Method.PATCH:
-					webRequest = http.PatchAsync(responseCb);
+					webRequest = http.PatchAsync(response_cb);
 					break;
 			}
 			
@@ -92,13 +94,13 @@ namespace RestSharp
 		/// <typeparam name="T">Target deserialization type</typeparam>
 		/// <param name="request">Request to be executed</param>
 		/// <param name="callback">Callback function to be executed upon completion</param>
-		public virtual RestRequestAsyncHandle ExecuteAsync<T>(IRestRequest request, Action<IRestResponse<T>, RestRequestAsyncHandle> callback) where T : new()
+		public virtual RestRequestAsyncHandle ExecuteAsync<T>(IRestRequest request, Action<IRestResponse<T>, RestRequestAsyncHandle> callback)
 		{
-			return ExecuteAsync(request, (response, asyncHandle) => 
+			return ExecuteAsync(request, (response, asyncHandle) =>
 			{
-				IRestResponse<T> restResponse = null;
-
-				if (response.ResponseStatus != ResponseStatus.Aborted) {
+				IRestResponse<T> restResponse = response as RestResponse<T>;
+				if (response.ResponseStatus != ResponseStatus.Aborted)
+				{
 					restResponse = Deserialize<T>(request, response);
 				}
 
